@@ -9,39 +9,21 @@ def main():
 	Count = db.Count
 	Prices = db.Prices
 
-	# stock_to_enter = input('Stock to enter: ')
-	# time_to_enter =  input('Time to enter: ')
-	# author_to_enter = input('Author to enter: ')
-
+	'''Get data from scraper'''
 	dataToEnter = SAlphaScraper.getData()
 
-	'''Resetter'''
-	# Count.delete_many({})			
-	# post= {"name": stock_to_enter, "mentions": "1", "timestamps": [datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")]}
-	# Count.insert_one(post)
-
-
 	'''Update Count Collection'''
-	check = Count.find_one({"name": stock_to_enter})		#Check if stock entry has been found before in 'Count'
-
-	if check == None:						#Not mentioned before
-		post= {"name": stock_to_enter, "mentions": "1", "timestamps": [time_to_enter], "authors":[author_to_enter]}
-		Count.insert_one(post)
-		print("Check 1")
-	else:									#Mentioned before
-		countNum = check["mentions"]
-		timesList = check["timestamps"]
-		authorsList = check['authors']
-		timesList.append(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
-		authorsList.append('John')
-		Count.update_one({"name":stock_to_enter}, {"$set": {"mentions": str(int(countNum)+1), "timestamps":timesList, 'authors':authorsList}})
-		print("Check 2")
+	bulk = Count.initialize_ordered_bulk_op()
+	for dataPoint in dataToEnter:
+		bulk.find({'name': dataPoint[0]}).upsert().update({'$inc': {'mentions': 1}, '$push': {'timestamps': dataPoint[1], 'authors': dataPoint[2]}})
+	bulk.execute()
 
 	
-	look = Count.find({})
+	look = Count.find({}, {'_id': False}).sort('name', pymongo.ASCENDING)
 
 	for each in look:
 		print(each)
+	print(Count.count())
 
 	
 
