@@ -22,19 +22,40 @@ def getMonth(month):
 def formatDate(timeSplit):
 	if len(timeSplit) ==2:
 		tz = timezone('EST')
-		formattedTime = datetime.datetime.now(tz)
+		formattedTime = tz.localize(datetime.datetime.now())
+
+		first = timeSplit[1].strip()[:5]
+		if len(first.strip()) == 4:
+			first = '0'+first.strip()
+		second = timeSplit[1].strip()[5:].strip()
+
+		if second =='PM' and int(first.split(':')[0]) <12:
+			#Turn time into numbers, add 12 to hour
+			timeofday = str(int(first.split(':')[0])+12)+':'+first.split(':')[1]
+		else:
+			timeofday = first
+
 		if timeSplit[0] == 'Today':
-			formattedTime = formattedTime.strftime("%Y-%m-%d")
+			formattedTime = formattedTime.strftime("%Y-%m-%d") + " "+ timeofday
 		else:
 			formattedTime = formattedTime - datetime.timedelta(days=1)
-			formattedTime = formattedTime.strftime("%Y-%m-%d")
+			formattedTime = formattedTime.strftime("%Y-%m-%d")+ " "+ timeofday
 
 	else:
-		formattedTime = '2017-'+ getMonth(timeSplit[1])+'-'+ timeSplit[2].strip()
+		first = timeSplit[3].strip()[:5]
+		second = timeSplit[3].strip()[5:].strip()
+		if second =='PM':
+			#Turn time into numbers, add 12 to hour
+			timeofday = str(int(first.split(':')[0])+12)+':'+first.split(':')[1]
+		else:
+			timeofday = first
+		formattedTime = '2017-'+ getMonth(timeSplit[1])+'-'+ timeSplit[2].strip()+" "+timeofday
+	
 	return formattedTime
 
 
-def getData():
+def getData(lastSearch):
+
 	url = 'https://seekingalpha.com/stock-ideas'
 	r = requests.get(url)
 
@@ -57,8 +78,10 @@ def getData():
 			time = specific_time.get_text().replace('.',',')
 			timeSplit= time.split(',')
 			formattedDate = formatDate(timeSplit)
-			articleData = [stock_mentions.get_text(), formattedDate, specific_author.get_text()]
-			retData.append(articleData)
+			# print(formattedDate.strip() + "      "+ lastSearch.strip())
+			if formattedDate.strip() > lastSearch.strip():
+				articleData = [stock_mentions.get_text(), formattedDate, specific_author.get_text()]
+				retData.append(articleData)
 	
 	return retData
 
