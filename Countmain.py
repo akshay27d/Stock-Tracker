@@ -36,13 +36,19 @@ def main():
 	except Exception:
 		None
 	
-	look = Count.find({}, {'_id': False}).sort('mentions', pymongo.DESCENDING)
+	look = Count.find({}, {'name': 1, 'mentions':1, '_id':0}).sort('mentions', pymongo.DESCENDING)
 
 	for each in look:
 		print(each)
 	print(Count.count())
 
+	Log.update({'name': 'EntriesCount'}, {'$inc': {'totalEntries': newEntries}}, True)
+	# Log.find({'name': 'EntriesCount'}).upsert().update({'$inc': {'totalEntries': newEntries}})
+
 	print('New Entries: ' + str(newEntries))
+	numEntered = Log.find_one({'name': 'EntriesCount'}, {'totalEntries':1, '_id':0})
+
+	print('Entries to date: ' +str(numEntered['totalEntries']))
 
 	
 
